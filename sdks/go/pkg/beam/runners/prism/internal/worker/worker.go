@@ -24,6 +24,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -127,7 +128,7 @@ var minsev = fnpb.LogEntry_Severity_DEBUG
 
 func (wk *W) GetProvisionInfo(_ context.Context, _ *fnpb.GetProvisionInfoRequest) (*fnpb.GetProvisionInfoResponse, error) {
 	endpoint := &pipepb.ApiServiceDescriptor{
-		Url: wk.Endpoint(),
+		Url: "host.docker.internal:" + strings.Split(wk.Endpoint(), ":")[1],
 	}
 	resp := &fnpb.GetProvisionInfoResponse{
 		Info: &fnpb.ProvisionInfo{
@@ -138,7 +139,7 @@ func (wk *W) GetProvisionInfo(_ context.Context, _ *fnpb.GetProvisionInfoRequest
 			LoggingEndpoint: endpoint,
 			ControlEndpoint: endpoint,
 			ArtifactEndpoint: &pipepb.ApiServiceDescriptor{
-				Url: wk.ArtifactEndpoint,
+				Url: "host.docker.internal:" + strings.Split(wk.ArtifactEndpoint, ":")[1],
 			},
 
 			RetrievalToken:  wk.JobKey,
@@ -680,7 +681,7 @@ type MultiplexW struct {
 func NewMultiplexW(lis net.Listener, g *grpc.Server, logger *slog.Logger) *MultiplexW {
 	_, p, _ := net.SplitHostPort(lis.Addr().String())
 	mw := &MultiplexW{
-		endpoint: "localhost:" + p,
+		endpoint: "host.docker.internal:" + p,
 		logger:   logger,
 		pool:     make(map[string]*W),
 	}

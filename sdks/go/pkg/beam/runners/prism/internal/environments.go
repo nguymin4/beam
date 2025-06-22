@@ -23,7 +23,9 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"runtime"
 	"slices"
+	"strings"
 	"time"
 
 	fnpb "github.com/apache/beam/sdks/v2/go/pkg/beam/model/fnexecution_v1"
@@ -165,6 +167,14 @@ func externalEnvironment(ctx context.Context, ep *pipepb.ExternalPayload, wk *wo
 	wk.Stop()
 }
 
+func hostFromWorker() string {
+	if runtime.GOOS == "darwin" {
+		return "host.docker.internal"
+	} else {
+		return "localhost"
+	}
+}
+
 func dockerEnvironment(ctx context.Context, logger *slog.Logger, dp *pipepb.DockerPayload, wk *worker.W, artifactEndpoint string) error {
 	logger = logger.With("worker_id", wk.ID, "image", dp.GetContainerImage())
 
@@ -206,15 +216,22 @@ func dockerEnvironment(ctx context.Context, logger *slog.Logger, dp *pipepb.Dock
 		}
 	}
 	logger.Debug("creating container", "envs", envs, "mounts", mounts)
+	host := hostFromWorker()
+	slog.Warn("hostFromWorker", "host", host)
+	controlEndpointPort := strings.Split(wk.Endpoint(), ":")[1]
+	controlEndpoint := host + ":" + controlEndpointPort
+	artifactEndpointPort := strings.Split(artifactEndpoint, ":")[1]
+	artifactEndpoint = host +  ":" + artifactEndpointPort
 
+	slog.Warn("Endpoints", "controlEndpoint", controlEndpoint, "artifactEndpoint", artifactEndpoint)
 	ccr, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: dp.GetContainerImage(),
 		Cmd: []string{
 			fmt.Sprintf("--id=%v", wk.ID),
-			fmt.Sprintf("--control_endpoint=%v", wk.Endpoint()),
+			fmt.Sprintf("--control_endpoint=%v", controlEndpoint),
 			fmt.Sprintf("--artifact_endpoint=%v", artifactEndpoint),
-			fmt.Sprintf("--provision_endpoint=%v", wk.Endpoint()),
-			fmt.Sprintf("--logging_endpoint=%v", wk.Endpoint()),
+			fmt.Sprintf("--provision_endpoint=%v", controlEndpoint),
+			fmt.Sprintf("--logging_endpoint=%v", controlEndpoint),
 		},
 		Env: envs,
 		Tty: false,
