@@ -212,7 +212,7 @@ func dockerEnvironment(ctx context.Context, logger *slog.Logger, dp *pipepb.Dock
 		Cmd: []string{
 			fmt.Sprintf("--id=%v", wk.ID),
 			fmt.Sprintf("--control_endpoint=%v", wk.Endpoint()),
-			fmt.Sprintf("--artifact_endpoint=%v", artifactEndpoint),
+			fmt.Sprintf("--artifact_endpoint=%v", wk.Endpoint()),
 			fmt.Sprintf("--provision_endpoint=%v", wk.Endpoint()),
 			fmt.Sprintf("--logging_endpoint=%v", wk.Endpoint()),
 		},

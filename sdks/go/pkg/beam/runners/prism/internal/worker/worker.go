@@ -138,7 +138,7 @@ func (wk *W) GetProvisionInfo(_ context.Context, _ *fnpb.GetProvisionInfoRequest
 			LoggingEndpoint: endpoint,
 			ControlEndpoint: endpoint,
 			ArtifactEndpoint: &pipepb.ApiServiceDescriptor{
-				Url: wk.ArtifactEndpoint,
+				Url: wk.Endpoint(),
 			},
 
 			RetrievalToken:  wk.JobKey,
@@ -680,7 +680,7 @@ type MultiplexW struct {
 func NewMultiplexW(lis net.Listener, g *grpc.Server, logger *slog.Logger) *MultiplexW {
 	_, p, _ := net.SplitHostPort(lis.Addr().String())
 	mw := &MultiplexW{
-		endpoint: "localhost:" + p,
+		endpoint: "192.168.64.1:" + p,
 		logger:   logger,
 		pool:     make(map[string]*W),
 	}
